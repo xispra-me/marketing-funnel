@@ -1,0 +1,815 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Choose Your Funnel — Same Formula, Different Skin</title>
+<meta name="description" content="An interactive tool exposing the identical sales manipulation formula used across fitness, wellness, photography, AI, skincare, dog training and more.">
+<meta property="og:title" content="Choose Your Funnel — Same Formula, Different Skin">
+<meta property="og:description" content="Pick a niche. Take a quiz. Watch an AI-generated sales pitch adapt to your answers — annotated with the manipulation technique at every step.">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.3.1/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.3.1/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.26.9/babel.min.js"></script>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const { useState, useEffect, useRef, useCallback } = React;
+
+// ═══════════════════════════════════════════════════════════
+// FUNNEL DEFINITIONS — same formula, different skin
+// ═══════════════════════════════════════════════════════════
+
+const FUNNELS = {
+  fitness: {
+    name: "Weight Management",
+    icon: "🏋️",
+    tagline: "\"Celebrity trainer reveals 3 fat loss secrets...\"",
+    also: "Also: abs programmes, fitness apps, supplement stacks, body transformation challenges",
+    color: "#ff4848",
+    quiz: [
+      { id: "gender", q: "What best describes you?", opts: ["Male", "Female"], meta: "One tap. You're in. This single answer changes every pronoun and image in the pitch." },
+      { id: "age", q: "How old are you?", opts: ["18–29", "30–39", "40–49", "50+"], meta: "Calibrates the urgency. Younger: 'imagine 6 months from now.' Older: 'it's NOT too late.'" },
+      { id: "goal", q: "What's your #1 goal?", opts: ["Lose weight", "Get toned", "Build muscle", "Feel healthier"], meta: "Now they know which emotional lever to pull. This word will appear in 'your personalised results.'" },
+      { id: "struggle", q: "Your biggest struggle?", opts: ["Can't stay consistent", "Don't know what to eat", "No time", "Nothing works"], meta: "Pain point harvesting. This exact phrase gets read back to you as if it's a diagnosis." },
+      { id: "activity", q: "How active are you?", opts: ["Sedentary", "Light", "Moderate", "Very active"], meta: "Determines which 'mistake' they emphasise. Active? 'You're overtraining.' Sedentary? 'You need the right programme.'" },
+    ],
+    getProfile: (a) => {
+      const g = a.goal || "Lose weight";
+      const types = {
+        "Lose weight": { type: "Adaptive", emoji: "🔄", line: "Your metabolism has adapted against you" },
+        "Get toned": { type: "Rebound", emoji: "🔁", line: "Doing the work but can't break through" },
+        "Build muscle": { type: "Accelerator", emoji: "⚡", line: "Fast metabolism, slow progress" },
+        "Feel healthier": { type: "Balanced", emoji: "🌿", line: "Ready to transform but need the right path" },
+      };
+      return types[g] || types["Lose weight"];
+    },
+    phases: (a, p) => {
+      const isMale = a.gender === "Male";
+      const older = a.age === "40–49" || a.age === "50+";
+      const str = a.struggle || "Nothing works";
+      return {
+        mirror: `Based on your answers, you're the ${p.type} Type. ${str === "Can't stay consistent" ? "You start strong but life gets in the way. Every Monday is a fresh start that fades by Wednesday." : str === "Don't know what to eat" ? "You've been flooded with conflicting advice — keto, paleo, intermittent fasting — and none of it sticks." : str === "No time" ? "Between work and life, finding an hour for the gym feels impossible. When you do go, you're not sure you're doing the right things." : "You've tried the diets. You've done the workouts. You've even seen some results — but they never last."} ${isMale ? "You avoid taking your shirt off." : "You avoid certain outfits."} ${older ? "And you're wondering if your body just doesn't respond like it used to." : "And you're starting to wonder if some people are just built differently."}`,
+        agitate: `You've ${str === "Can't stay consistent" ? "started and stopped more programmes than you can count. Each time you feel worse about yourself" : str === "No time" ? "tried squeezing in workouts before dawn, watched YouTube videos at 2x speed, bought equipment that gathers dust" : "tried cutting calories, upping cardio, following influencer advice that contradicts itself every week"}. ${older ? "Every year it gets harder. The weight creeps on. The energy drops." : "People around you seem to manage it effortlessly. What are they doing that you're not?"} Maybe it's genetics. Maybe it's discipline. Maybe some people just can't do this.`,
+        eliminate: `Here's the truth. It's NOT your genetics. ${older ? "It's NOT your age." : "It's NOT your willpower."} The problem is that you've been following advice designed for beginners — or worse, advice designed to sell supplements. Standard 'eat less move more' causes metabolic adaptation. Your body fights back. What you need is a completely different approach based on YOUR specific body type.`,
+        authority: `I used to struggle with the same thing. ${isMale ? "Before I became a fitness model, I was overweight and lost." : "I spent years fighting my own body before I figured it out."} I've now helped over 10,000 people break through. Not with willpower. Not with restriction. With science-based methods that work WITH your body, not against it.`,
+        m1: `You're training wrong. ${a.activity === "Very active" ? "More gym time is actually working AGAINST you. In a deficit, you can't recover — you're overtrained, flat, and frustrated." : "When you do train, you're doing generic routines that waste your time."} The answer is time under tension — fewer sets, 40–60 seconds each. More muscle growth in less time. But the specific exercises and weights matter — get them wrong and nothing happens.`,
+        m2: `You're eating wrong. Not too much or too little — wrong PATTERN. Carb cycling matches your nutrition to your training days. More fuel when you need it, deficit when you don't. Your body never adapts because the stimulus changes. The key is knowing exactly which days, how many grams, and when to time your meals.`,
+        m3: `Your cardio is backwards. Long steady-state sessions are breaking down muscle. HIIT — 15 minutes, specific protocols — creates an afterburn that lasts 48 hours. But timing and intensity are everything. Wrong protocol on the wrong day and you're wasting your time.`,
+        gap: `So which exercises, exactly? How many carbs on which days? What HIIT protocol? The concepts make sense — but the details make it work. You could experiment for months... or you could follow the exact blueprint I've created. No guesswork.`,
+        value: `The complete system: carb cycling calculator, 90 days of filmed workouts (gym and home), 3 rotating HIIT protocols, PLUS a recipe book, a core programme, and a ${isMale ? "muscle definition" : "body sculpting"} bonus. Total value: £230+.`,
+        price: `A personal trainer charges £50/hour — that's £600 for 12 sessions. This is everything, forever, for £67. One payment. Instant access. Why? Because I want to help as many people as possible.`,
+      };
+    },
+    advice: [
+      { icon: "⚖️", title: "Energy balance is the only mechanism", detail: "Every diet that works — keto, IF, paleo, carb cycling — works because it gets you eating the right amount. No metabolic hacks, no confusion. Find an eating pattern you can sustain for years." },
+      { icon: "🏋️", title: "Progressive resistance training", detail: "Gradually increase weight, reps, or volume. 2–4 sessions/week. Compound movements. Time under tension is one real variable among many — not a cheat code." },
+      { icon: "🥗", title: "Eat a proper balanced diet", detail: "Plenty of vegetables, adequate protein (1.6–2.2g/kg), whole grains, healthy fats. You don't need supplements — you need to eat properly. A food tracker like Nutricheck can help you understand what you're actually eating." },
+      { icon: "😴", title: "Sleep 7–9 hours", detail: "Poor sleep raises hunger hormones, tanks recovery, spikes cortisol. It's free — which is why nobody tries to sell it to you." },
+      { icon: "📅", title: "Consistency over months and years", detail: "The industry sells 90-day transformations because urgency converts. Real change takes sustained effort over 12+ months." },
+      { icon: "🧠", title: "Behaviour change matters more than information", detail: "You probably already know roughly what to do. Consistency is the hard part — that's a habits and psychology problem, not a PDF problem." },
+    ],
+    resources: [
+      { name: "Nutricheck / Calorie Counter", desc: "Practical food tracking without the noise", where: "App Store" },
+      { name: "Jeff Nippard", desc: "Evidence-based training & nutrition", where: "YouTube" },
+      { name: "Renaissance Periodization", desc: "Hypertrophy science — Dr Mike Israetel", where: "YouTube" },
+      { name: "Stronger By Science", desc: "Research-backed programmes", where: "Website" },
+      { name: "NHS Better Health", desc: "Free, no-nonsense UK guidance", where: "nhs.uk" },
+      { name: "Andy Galpin", desc: "Exercise physiology deep dives", where: "YouTube" },
+    ],
+  },
+
+  taichi: {
+    name: "Tai Chi / Wellness",
+    icon: "🧘",
+    tagline: "\"Ancient master reveals the 3 movements Western instructors won't teach...\"",
+    also: "Also: yoga, posture correction, breathwork, qigong, meditation apps",
+    color: "#8b5cf6",
+    quiz: [
+      { id: "age", q: "What's your age range?", opts: ["Under 40", "40–54", "55–64", "65+"], meta: "Over-50s wellness is a massive market. Age = urgency + vulnerability." },
+      { id: "experience", q: "Tai chi experience?", opts: ["Complete beginner", "Watched videos", "Attended classes", "Regular practice"], meta: "Determines whether they pitch 'unlock the secrets' or 'what your instructor isn't telling you.'" },
+      { id: "interest", q: "What drew you to tai chi?", opts: ["Balance & fall prevention", "Stress & anxiety", "Joint pain / mobility", "Spiritual practice"], meta: "The emotional lever. Health anxiety is the most powerful motivator in this demographic." },
+      { id: "struggle", q: "What's held you back?", opts: ["Don't know where to start", "Classes feel too slow/fast", "Not sure I'm doing it right", "Can't find good instruction"], meta: "Insecurity harvesting. 'Not sure I'm doing it right' is the golden answer — it creates dependency." },
+      { id: "time", q: "How much time can you commit?", opts: ["5 mins/day", "15 mins/day", "30 mins/day", "I have plenty of time"], meta: "'Only 5 minutes' is the answer they want. It lets them promise results with minimal effort." },
+    ],
+    getProfile: (a) => {
+      const types = {
+        "Balance & fall prevention": { type: "Rooted", emoji: "🌳", line: "Your qi foundation needs grounding" },
+        "Stress & anxiety": { type: "Flowing", emoji: "🌊", line: "Your energy channels are blocked" },
+        "Joint pain / mobility": { type: "Supple", emoji: "🎋", line: "Your joints hold stagnant qi" },
+        "Spiritual practice": { type: "Centred", emoji: "☯️", line: "Your practice needs the authentic lineage" },
+      };
+      return types[a.interest] || types["Stress & anxiety"];
+    },
+    phases: (a, p) => {
+      const older = a.age === "55–64" || a.age === "65+";
+      const beginner = a.experience === "Complete beginner" || a.experience === "Watched videos";
+      const str = a.struggle || "Not sure I'm doing it right";
+      return {
+        mirror: `Based on your answers, your energy profile is ${p.type}. ${a.interest === "Balance & fall prevention" ? "You're concerned about stability — maybe you've had a fall, or you've noticed your balance isn't what it was. You want to feel safe and confident on your feet." : a.interest === "Stress & anxiety" ? "You carry tension. Maybe it's work, family, health worries. You've heard tai chi can help but you're not sure where to start or if you're doing it right." : a.interest === "Joint pain / mobility" ? "Your body doesn't move the way it used to. Stiffness in the morning. Aches that linger. You've heard tai chi is gentle enough to help without making things worse." : "You're drawn to something deeper — a practice that connects mind, body, and spirit. But most of what you find online feels shallow or commercialised."} ${str === "Not sure I'm doing it right" ? "And the worst part — you're never sure if you're actually doing it correctly." : ""}`,
+        agitate: `${beginner ? "You've watched YouTube videos but they all contradict each other. Some say start with the 24 form, others say the 8 form, others say forget forms entirely." : "You've been to classes, maybe several, but something's missing. The instructor rushes through movements or doesn't explain the principles."} ${older ? "And there's a clock ticking — every month that passes, your mobility, balance, and energy decrease a little more." : "You feel like you're going through the motions without understanding what you're actually doing."} ${a.interest === "Joint pain / mobility" ? "Meanwhile your joints are getting stiffer and you're worried about what the next 5 years look like." : "You sense the potential but can't unlock it."}`,
+        eliminate: `Here's what most people don't realise. ${beginner ? "90% of tai chi content online teaches MOVEMENTS without the PRINCIPLES. It's like learning to type without understanding language." : "Most Western tai chi instructors learned a simplified version stripped of the authentic internal arts principles."} The forms are just the surface. Without understanding qi flow, rooting, and the internal mechanics, you're doing slow-motion aerobics. Not tai chi.`,
+        authority: `I studied under Master [Name] in Wudang for 7 years. ${older ? "I've worked with thousands of over-50s" : "I've taught students across 40 countries"} and I've seen the same pattern: people practising for years without ever accessing the real benefits. Because nobody taught them the 3 foundational principles that change everything.`,
+        m1: `You're learning forms without foundations. ${beginner ? "Starting with a long form is like learning to run before you can stand." : "Even experienced practitioners skip the standing meditation (zhan zhuang) that builds real internal connection."} The ancient masters spent YEARS on standing practice before learning a single form. 5 minutes of correct standing practice is worth more than an hour of empty forms.`,
+        m2: `Your breathing is disconnected. Most instructors teach movements and assume breathing will follow. It won't. There's a specific diaphragmatic pattern — ${a.interest === "Stress & anxiety" ? "proven to activate the parasympathetic nervous system and reduce cortisol" : a.interest === "Joint pain / mobility" ? "that drives synovial fluid into your joints and reduces inflammation" : "that directs qi to your lower dantian, creating the root all movement flows from"}. Without it, you're getting 30% of the benefit.`,
+        m3: `Your practice timing is wrong. ${a.time === "5 mins/day" ? "5 minutes CAN be enough — but only if it's the RIGHT 5 minutes." : "More practice isn't better — CORRECT practice at the right time of day is."} The ancient practitioners aligned with circadian qi flow. ${older ? "For over-50s especially, morning practice before the body stiffens is critical." : "Early morning or late evening — when the world is still — amplifies the internal work."} Random practice at random times produces random results.`,
+        gap: `So which standing posture exactly? What breathing pattern? What time, for how long, in what sequence? The principles make sense — but the specific practice protocol makes it work. You could spend years experimenting... or you could follow the exact programme I've created.`,
+        value: `The complete system: 12-week progressive programme from standing foundations through full form. Daily guided videos — ${a.time === "5 mins/day" ? "starting at just 5 minutes" : "15–30 minutes each"}. Breathing protocol library. ${a.interest === "Joint pain / mobility" ? "Joint restoration sequences" : a.interest === "Balance & fall prevention" ? "Balance confidence programme" : "Meditation integration module"}. PLUS: printed wall chart (£25 value, FREE). Qi gong morning routine (£35 value, FREE). Private community access (£47 value, FREE). Total value: £200+.`,
+        price: `A private tai chi instructor charges £40–£60/hour. 12 sessions = £600+. This entire programme: £57. One payment. Lifetime access. Because authentic tai chi should be accessible to everyone.`,
+      };
+    },
+    advice: [
+      { icon: "🧍", title: "Find a real teacher — in person", detail: "No video course replaces a qualified instructor who can see your posture, correct your alignment, and adapt to your body. Look for TCUGB-registered instructors in the UK." },
+      { icon: "🦶", title: "Consistency beats intensity", detail: "10 minutes daily is worth more than a 2-hour weekend session. The research on tai chi benefits (balance, BP, anxiety) is based on regular, sustained practice over months." },
+      { icon: "🧠", title: "It's exercise, not magic", detail: "Tai chi has genuine evidence for balance, fall prevention, blood pressure, and stress. The 'qi flow' and 'energy channels' framing is cultural context — the benefits come from slow, controlled movement, weight transfer, and focused breathing." },
+      { icon: "⚠️", title: "Beware 'lineage' gatekeeping", detail: "'My master learned from the REAL master' is the tai chi equivalent of 'body types.' There are many valid styles and approaches. Anyone claiming exclusive access to 'authentic' teaching is selling you something." },
+      { icon: "📚", title: "The principles ARE freely available", detail: "Weight shifting, rooting, relaxation (song), silk reeling — these are well-documented. Books by Yang Jwing-Ming, Chen Xiaowang's videos, or Tai Chi Union courses teach them without the mystical upsell." },
+      { icon: "🏥", title: "For health conditions, talk to your GP", detail: "Tai chi is excellent gentle exercise, but 'qi stagnation' is not a medical diagnosis. If you have joint pain, balance issues, or anxiety, your GP and a physiotherapist should be your first stops." },
+    ],
+    resources: [
+      { name: "Tai Chi Union for Great Britain", desc: "Find registered instructors near you", where: "taichiunion.com" },
+      { name: "Yang Jwing-Ming", desc: "Respected author & teacher — books and videos", where: "Books / YouTube" },
+      { name: "NHS recommended exercise", desc: "Tai chi listed as beneficial for over-65s", where: "nhs.uk" },
+      { name: "Local council classes", desc: "Often subsidised, in-person, social", where: "Your council website" },
+      { name: "Chen Xiaowang Foundation", desc: "Free instructional content from a grandmaster", where: "YouTube" },
+    ],
+  },
+
+  photography: {
+    name: "Photography",
+    icon: "📸",
+    tagline: "\"Pro photographer reveals the 3 settings most photographers never discover...\"",
+    also: "Also: piano, guitar, drawing, golf swing, music production, watercolour",
+    color: "#f59e0b",
+    quiz: [
+      { id: "level", q: "Your photography experience?", opts: ["Phone only", "Just got a camera", "Intermediate", "Advanced but stuck"], meta: "'Advanced but stuck' is the golden answer — it justifies a premium pitch to someone who already knows the basics." },
+      { id: "camera", q: "What do you shoot with?", opts: ["iPhone / phone", "Mirrorless", "DSLR", "Multiple systems"], meta: "Gear envy is the engine of photography marketing. This answer determines the 'you need to unlock YOUR camera's potential' angle." },
+      { id: "genre", q: "What do you love shooting?", opts: ["Landscape / nature", "Portraits / people", "Street / documentary", "Astro / night"], meta: "Determines the aspirational images they'll show. Landscapes get misty mountains. Portraits get creamy bokeh." },
+      { id: "frustration", q: "Your biggest frustration?", opts: ["Photos look flat", "Can't get sharp focus", "Editing overwhelms me", "Lack creative vision"], meta: "Another pain-point harvest. 'Lack creative vision' is perfect — it's vague enough to mean anything and sells the 'you need MY framework' pitch." },
+      { id: "time", q: "How much time for photography?", opts: ["Weekends only", "A few hours/week", "It's my main hobby", "Aspiring professional"], meta: "'Aspiring professional' signals willingness to spend. They'll pitch the expensive tier." },
+    ],
+    getProfile: (a) => {
+      const types = {
+        "Photos look flat": { type: "Technical", emoji: "📐", line: "You're missing the light-reading instinct" },
+        "Can't get sharp focus": { type: "Precision", emoji: "🎯", line: "Your autofocus workflow needs resetting" },
+        "Editing overwhelms me": { type: "Raw Potential", emoji: "💎", line: "Your files contain hidden quality" },
+        "Lack creative vision": { type: "Visionary", emoji: "👁️", line: "You see the world differently — you just need the framework" },
+      };
+      return types[a.frustration] || types["Photos look flat"];
+    },
+    phases: (a, p) => {
+      const pro = a.time === "Aspiring professional";
+      const beginner = a.level === "Phone only" || a.level === "Just got a camera";
+      const genre = a.genre || "Landscape / nature";
+      return {
+        mirror: `Based on your answers, you're the ${p.type} Type. ${a.frustration === "Photos look flat" ? "You take the photo, look at the back of the camera, and it looks... fine. But it doesn't look like the images you admire. There's no depth, no mood, no 'wow.' You know something's missing but you can't name it." : a.frustration === "Can't get sharp focus" ? "You've had that moment — the perfect composition, the perfect light, and then you get home and the focus is slightly off. Or the wrong eye is sharp. Or it's just... soft. It's infuriating." : a.frustration === "Editing overwhelms me" ? "You shoot in RAW because everyone says you should. Then you open Lightroom and face 150 sliders and no idea which ones matter. Your photos sit on a hard drive, unedited, unseen." : "You can take a technically competent photo. Exposure is fine. Focus is fine. But it's boring. It looks like everyone else's. You scroll through Instagram and wonder what separates good from great."}`,
+        agitate: `${beginner ? "You've watched YouTube tutorials — 'shoot in manual!' — but in the moment, you panic and switch back to auto." : "You've been shooting for a while now. You've watched hundreds of tutorials. You've upgraded your gear."} But your photos still don't look like the ones you admire. ${genre === "Landscape / nature" ? "Those atmospheric shots with perfect light and incredible depth — how do they DO that?" : genre === "Portraits / people" ? "Those portraits where the subject seems to glow — creamy backgrounds, perfect skin tones — yours look like snapshots by comparison." : genre === "Street / documentary" ? "Those decisive moments that tell a story in a single frame — you're there but you never seem to catch them." : "Those incredible night shots with pinpoint stars and rich foreground — yours are noisy, blurry, or both."} Maybe you need a better lens. Maybe you need more talent.`,
+        eliminate: `Here's the truth. It's NOT your gear. ${beginner ? "Phone cameras today are genuinely incredible — the limitation isn't the sensor." : "You could hand a master photographer a £300 camera and they'd outshoot most people with a £3,000 setup."} It's NOT about talent either. ${pro ? "Most working professionals aren't artistic geniuses — they've internalised a system." : "Photography is a learnable skill, not a gift."} The problem is that tutorials teach you WHAT to do — aperture, shutter speed, ISO — but not HOW TO SEE.`,
+        authority: `I've been a professional photographer for 15 years. My work has appeared in [impressive publications]. I've mentored over 5,000 students. And I'll tell you a secret: for the first 3 years, my photos were mediocre. It wasn't until I discovered these 3 principles — principles most YouTube tutorials completely ignore — that everything changed.`,
+        m1: `You're chasing settings when you should be reading light. ${a.frustration === "Photos look flat" ? "Flat photos happen because of flat light — not wrong settings." : "Technical problems are usually light problems in disguise."} There's a framework I call the Light Triangle — direction, quality, and colour temperature. Once you see light this way, you'll ${genre === "Landscape / nature" ? "know exactly when and where to be for extraordinary landscapes" : genre === "Portraits / people" ? "instantly see where to position your subject for stunning natural light" : "read any scene in seconds and know exactly how it will render"}. But it's not just 'golden hour good, midday bad' — there are specific techniques for EVERY lighting condition.`,
+        m2: `Your composition is following rules instead of principles. Rule of thirds? Leading lines? These are training wheels that actually LIMIT your creativity. The masters use visual weight, tension, and negative space — a completely different framework that produces ${genre === "Street / documentary" ? "images that stop people mid-scroll" : "compositions that feel inevitable, like nothing else could have worked"}. But you can't learn this from a YouTube thumbnail — it requires structured practice with feedback.`,
+        m3: `Your editing workflow is either overdone or underdone. ${a.frustration === "Editing overwhelms me" ? "You're staring at 150 sliders when only 6 of them matter for 95% of images." : "You're probably over-processing to compensate for what should have been captured in-camera."} I use a 6-slider method that takes under 3 minutes per photo and produces results that look ${pro ? "magazine-ready" : "better than hours of tweaking"}. But the 6 sliders are different for every genre — and the ORDER matters.`,
+        gap: `So which light to look for, exactly? Which composition framework? Which 6 sliders in which order? The concepts make sense — but the specific framework makes it work. You could spend years developing an eye... or you could follow the exact system I've built.`,
+        value: `The complete system: 12-week progressive programme from light-reading through advanced composition. ${genre}-specific modules. Daily photo challenges with before/after examples. 6-slider editing presets for Lightroom. PLUS: a RAW file practice library (£30 value, FREE). Printed composition cheat sheet (£15 value, FREE). ${pro ? "Portfolio review template" : "Instagram optimisation guide"} (£25 value, FREE). Total value: £180+.`,
+        price: `A private photography workshop costs £200–£400 per day. A mentorship programme runs £1,000+. This entire system: £47. One payment. Lifetime access. Because I believe great photography shouldn't be locked behind a price tag.`,
+      };
+    },
+    advice: [
+      { icon: "📷", title: "Shoot more. A lot more.", detail: "Volume is the single best teacher. Shoot daily, even for 10 minutes. Review your work critically. The feedback loop of shoot → review → adjust is how every good photographer improves." },
+      { icon: "💡", title: "Learn to see light", detail: "This is the one thing the funnels get right (then paywall). Observe how light falls on faces, buildings, landscapes. Direction, quality (hard/soft), colour. Practice noticing it when you don't have a camera." },
+      { icon: "📖", title: "Study photographs, not settings", detail: "Look at work by photographers you admire. Ask: why does this work? Where was the light? What's in the frame and what isn't? Books of photography teach more than camera tutorials." },
+      { icon: "🎨", title: "RAW processing is simple once you understand it", detail: "White balance, exposure, highlights, shadows, clarity, saturation. That's genuinely 90% of it. Everything else is refinement. A free trial of Lightroom or Capture One is all you need to start." },
+      { icon: "🚫", title: "Gear is almost never the problem", detail: "The best camera is the one you have. An iPhone in good light with good composition beats a £5,000 camera with bad composition. Don't upgrade until you can articulate exactly what limitation you're hitting." },
+      { icon: "👥", title: "Get feedback from real people", detail: "Join a local camera club. Post to r/photocritique. Find a mentor. No online course replaces honest human feedback on YOUR specific work." },
+    ],
+    resources: [
+      { name: "Sean Tucker", desc: "Philosophy of photography, light, and seeing", where: "YouTube" },
+      { name: "James Popsys", desc: "Honest, practical landscape photography", where: "YouTube" },
+      { name: "r/photocritique", desc: "Free community feedback on your work", where: "Reddit" },
+      { name: "Local camera clubs", desc: "In-person feedback, workshops, social", where: "Google '[your town] camera club'" },
+      { name: "Magnum Photos / LensCulture", desc: "Study the masters — free online archives", where: "Websites" },
+      { name: "Your local library", desc: "Photography books for free — Salgado, McCurry, Leibovitz", where: "Library" },
+    ],
+  },
+
+  hustle: {
+    name: "Side Hustle / AI / Online Biz",
+    icon: "💰",
+    tagline: "\"I quit my 9-to-5 and now make £10k/month from my laptop...\"",
+    also: "Also: 'master AI in 30 days', prompt engineering courses, crypto/forex signals, manifestation/law of attraction, wealth coaching, dropshipping",
+    color: "#10b981",
+    quiz: [
+      { id: "income", q: "What's your current situation?", opts: ["Full-time employed", "Part-time / freelance", "Between jobs", "Student"], meta: "Employed = 'escape your 9-to-5.' Unemployed = 'take control of your future.' Same product, different emotional lever." },
+      { id: "time", q: "How much time can you commit?", opts: ["1–2 hrs/week", "5–10 hrs/week", "15+ hrs/week", "Full time"], meta: "'1–2 hours' is the golden answer. It lets them promise results with almost no effort — the core fantasy of passive income." },
+      { id: "interest", q: "What appeals to you most?", opts: ["Passive income", "Freelancing / skills", "E-commerce / products", "Content creation"], meta: "Segmentation for the upsell. Each path leads to the same course but framed differently." },
+      { id: "blocker", q: "What's held you back?", opts: ["Don't know where to start", "Tried and failed", "No money to invest", "Fear of failure"], meta: "'Tried and failed' is perfect — they'll say EVERY method you tried was wrong, only theirs works." },
+      { id: "goal", q: "What does success look like?", opts: ["Extra £500/month", "Replace my salary", "£10k+/month", "Financial freedom"], meta: "'Financial freedom' is the dream they sell. The vaguer the goal, the harder it is to prove they failed." },
+    ],
+    getProfile: (a) => {
+      const types = {
+        "Passive income": { type: "Architect", emoji: "🏗️", line: "You're wired to build systems that earn while you sleep" },
+        "Freelancing / skills": { type: "Craftsman", emoji: "⚒️", line: "You have skills the market will pay premium for" },
+        "E-commerce / products": { type: "Merchant", emoji: "📦", line: "You think in products and value chains" },
+        "Content creation": { type: "Amplifier", emoji: "📡", line: "Your voice is your most valuable asset" },
+      };
+      return types[a.interest] || types["Passive income"];
+    },
+    phases: (a, p) => {
+      const broke = a.blocker === "No money to invest";
+      const failed = a.blocker === "Tried and failed";
+      const bigGoal = a.goal === "£10k+/month" || a.goal === "Financial freedom";
+      return {
+        mirror: `Based on your answers, you're the ${p.type} Type. ${a.income === "Full-time employed" ? "You're trading hours for money in someone else's business. You know you're worth more than your salary but you're stuck on the hamster wheel." : a.income === "Between jobs" ? "You're at a crossroads. Most people see unemployment as a crisis — but the smartest entrepreneurs see it as the moment everything changes." : "You've got the hunger but not the roadmap."} ${failed ? "You've tried things before — maybe dropshipping, maybe a course, maybe freelancing. It didn't work. And now you're wondering if this whole 'online income' thing is just a scam." : "You scroll past people living your dream life and wonder what they know that you don't."}`,
+        agitate: `${a.income === "Full-time employed" ? "Another Monday morning. Another commute. Another meeting that should have been an email. Meanwhile someone your age is posting from a beach in Bali about their morning revenue." : "The bills keep coming. The savings keep shrinking."} ${failed ? "Every course you bought collected dust. Every 'guru' promised a shortcut that didn't exist." : "You've watched the YouTube videos. '7 side hustles for 2026!' But none of them explain HOW — just what."} ${bigGoal ? "£10k/month sounds insane from where you're sitting now. But you've seen people dumber than you doing it. What do they know?" : "Even an extra £500/month would change your life. But where does it come from?"}`,
+        eliminate: `Here's the truth. It's NOT that online business doesn't work — it's a £500 billion economy. ${failed ? "Every method you tried probably DOES work — for the right person with the right system. You didn't fail. The system failed you." : "It's NOT that you need special skills or a big investment."} The problem is that 95% of 'make money online' advice is either outdated, oversimplified, or designed to sell you the NEXT course. You need a proven framework, not another guru.`,
+        authority: `3 years ago I was £40k in debt with a job I hated. I tried everything — dropshipping, Amazon FBA, affiliate marketing. All failed. Then I discovered a framework that changed everything. Within 18 months I'd replaced my salary. Within 2 years I hit £15k/month. Now I teach others to do the same.`,
+        m1: `You're picking the wrong business model. ${a.interest === "Passive income" ? "Most 'passive income' requires massive upfront work that nobody tells you about. There's a model that's actually achievable for beginners — but it's not what the gurus push because it doesn't sound sexy." : a.interest === "E-commerce / products" ? "Dropshipping is dead. Amazon FBA margins are razor thin. There's a product model that works in 2026 — but it requires a specific approach." : "You're trying to do what everyone else is doing. The opportunity is in a specific gap most people don't see."} The key is matching YOUR strengths to a validated model — not following a trend.`,
+        m2: `You don't have a system. You have scattered tactics. ${a.time === "1–2 hrs/week" ? "With limited time, EVERY hour has to count. Random YouTube tips waste 90% of your time on the wrong things." : "You're busy but unfocused — doing a bit of everything and mastering nothing."} The people earning £10k/month aren't smarter — they follow a step-by-step system. And the system I've built can work in ${a.time === "1–2 hrs/week" ? "just 1–2 focused hours per week" : "the time you already have available"}.`,
+        m3: `You're not building an audience. ${a.interest === "Content creation" ? "You're creating content without a strategy. Random posts don't build businesses — funnels do." : "You think you need a product first. Wrong. Audience first, product second."} An email list of 1,000 targeted subscribers is worth more than 100k Instagram followers. But building that list requires a specific method — not just 'post consistently.'`,
+        gap: `So which business model, exactly? What system? How do you build that list? The principles make sense — but the execution makes it work. You could spend a year and £5,000 on failed experiments... or follow my exact blueprint.`,
+        value: `The complete system: business model selector, step-by-step launch playbook, audience building framework, monetisation templates. ${broke ? "Zero upfront investment required." : ""} PLUS: swipe file of proven landing pages (£47, FREE). Email sequence templates (£37, FREE). ${bigGoal ? "Scaling to £10k" : "First £1k"} roadmap (£27, FREE). Total value: £300+.`,
+        price: `A business coach charges £200/hour. A proper course runs £2,000+. This entire system: £67. One payment. Lifetime access. Because I remember what it felt like to be where you are.`,
+      };
+    },
+    advice: [
+      { icon: "⏰", title: "It takes much longer than they say", detail: "Most successful online businesses took 1–3 years of consistent effort before meaningful income. Anyone promising £10k/month in 90 days is selling the dream, not the reality." },
+      { icon: "🚫", title: "'Passive income' is almost never passive", detail: "Every passive income stream requires massive active effort upfront, then ongoing maintenance. Rental income needs property management. Courses need marketing. Affiliate sites need SEO. The word 'passive' is marketing." },
+      { icon: "🧪", title: "Validate before you build", detail: "Before spending money on a course, website, or product: find 3 people who'll pay for what you're offering. If you can't, the business model doesn't work — no course will fix that." },
+      { icon: "📉", title: "Most side hustles fail — and that's normal", detail: "The survivorship bias in this space is extreme. You only see the success stories. For every '£10k/month' screenshot there are hundreds who made nothing. That's not a reason not to try — but go in with realistic expectations." },
+      { icon: "🔍", title: "The free information is genuinely good", detail: "YouTube, podcasts, and blogs contain everything you need to start any online business. The value of a course is structure and accountability — not secret knowledge. If the only selling point is 'secrets', it's a scam." },
+      { icon: "💸", title: "Beware the guru-to-guru pipeline", detail: "Many 'online business gurus' make their money teaching others to make money online. Their product IS the course about making money. Ask: what did they build BEFORE they started teaching?" },
+    ],
+    resources: [
+      { name: "My First Million podcast", desc: "Honest conversations about what works", where: "Podcast" },
+      { name: "Indie Hackers", desc: "Real founders sharing real revenue numbers", where: "indiehackers.com" },
+      { name: "r/juststart", desc: "Community of people building online income — warts and all", where: "Reddit" },
+      { name: "HMRC side income guidance", desc: "Know your tax obligations before you start", where: "gov.uk" },
+      { name: "Your local library", desc: "Business books for free — The Lean Startup, $100 Startup", where: "Library" },
+    ],
+  },
+
+  ai: {
+    name: "Learn AI / Prompt Engineering",
+    icon: "🤖",
+    tagline: "\"AI expert reveals the 3 prompt secrets that will 10x your productivity...\"",
+    also: "Also: 'future-proof your career', ChatGPT mastery, AI for business, no-code AI apps, AI side income",
+    color: "#6366f1",
+    quiz: [
+      { id: "level", q: "Your current AI experience?", opts: ["Never used it", "Basic ChatGPT user", "Use it for work regularly", "Built things with APIs"], meta: "Everyone except 'Built things with APIs' gets the same course. But asking makes you feel assessed, not sold to." },
+      { id: "role", q: "What best describes you?", opts: ["Office / knowledge worker", "Creative / freelancer", "Manager / business owner", "Developer / technical"], meta: "Segmentation for the pitch. Each role gets a different 'imagine what you could do' fantasy. Same product." },
+      { id: "goal", q: "What do you want from AI?", opts: ["Save time at work", "Build AI products", "Start an AI business", "Not get left behind"], meta: "'Not get left behind' is the fear-based golden answer. It's the AI equivalent of 'what are you doing wrong at the gym.' Pure FOMO." },
+      { id: "blocker", q: "What's held you back?", opts: ["Too technical / confusing", "Don't know where to start", "Information overload", "Worried about doing it wrong"], meta: "Every answer feeds the same pitch: 'you need a STRUCTURED approach, not scattered YouTube videos.' The course IS the structure." },
+      { id: "urgency", q: "How urgent does this feel?", opts: ["Curious but no rush", "Should probably learn soon", "Falling behind already", "My job depends on it"], meta: "This question IS the manipulation. By asking about urgency, they've made you articulate your own fear. Now they just reflect it back." },
+    ],
+    getProfile: (a) => {
+      const types = {
+        "Save time at work": { type: "Efficiency Architect", emoji: "⚡", line: "You're leaving 10+ hours per week on the table" },
+        "Build AI products": { type: "Builder", emoji: "🔨", line: "You have the vision but not the technical bridge" },
+        "Start an AI business": { type: "AI Entrepreneur", emoji: "🚀", line: "You're sitting on the biggest opportunity since the internet" },
+        "Not get left behind": { type: "Adapter", emoji: "🔄", line: "The window to upskill is closing fast" },
+      };
+      return types[a.goal] || types["Not get left behind"];
+    },
+    phases: (a, p) => {
+      const fearBased = a.goal === "Not get left behind" || a.urgency === "My job depends on it" || a.urgency === "Falling behind already";
+      const technical = a.role === "Developer / technical" || a.level === "Built things with APIs";
+      const business = a.role === "Manager / business owner" || a.goal === "Start an AI business";
+      const basic = a.level === "Never used it" || a.level === "Basic ChatGPT user";
+      return {
+        mirror: `Based on your answers, you're the ${p.type} Type. ${fearBased ? "You can feel the ground shifting. Every week there's a new headline — 'AI replaces 300 jobs', 'Companies now require AI skills', 'The roles that won't exist in 2 years.' You're not panicking, but you're aware that the people who figure this out now will be the ones who thrive." : a.goal === "Save time at work" ? "You're spending hours on tasks that AI could do in minutes. Emails, reports, research, analysis — you know there's a faster way but you're not sure how to get there without it feeling like another thing to learn." : a.goal === "Build AI products" ? "You can see the possibilities. AI tools, AI apps, AI-powered services — the market is exploding. But the gap between 'I can use ChatGPT' and 'I can build with AI' feels enormous." : "You know AI is the biggest business opportunity since the internet. But every guru is selling a different angle and you can't tell who actually knows what they're talking about."}`,
+        agitate: `${basic ? "You've tried ChatGPT. Asked it to write an email. Maybe generated an image for fun. But you know you're barely scratching the surface. Meanwhile," : "You use AI daily but you can see people getting 10x more from it. Custom workflows, automation, things you didn't even know were possible. Meanwhile,"} ${fearBased ? "your colleagues are starting to mention AI in meetings. Your industry publications are running 'AI transformation' features weekly. Job postings now list 'AI proficiency' as a requirement. The gap between people who GET it and people who don't is widening every month." : business ? "competitors are shipping AI features. Startups with 2 people are outperforming teams of 20 using AI. The leverage is insane — if you know how to use it." : "you're watching YouTube videos that are already outdated by the time you finish them. The landscape changes every week. How are you supposed to keep up?"} ${a.blocker === "Information overload" ? "There are 10,000 AI courses, 50,000 YouTube tutorials, and a new 'game-changing' tool every day. The noise is deafening." : ""}`,
+        eliminate: `Here's the truth. ${basic ? "You don't need a computer science degree. You don't need to learn to code. You don't need to understand neural networks." : "Knowing how to use ChatGPT doesn't make you AI-proficient — any more than knowing how to Google made you a researcher."} The problem is that ${a.blocker === "Information overload" ? "99% of AI content is either too basic ('here's how to write a prompt!'), too technical ('let me explain transformer architecture'), or trying to sell you something. There's almost nothing in the middle that gives you a PRACTICAL framework." : a.blocker === "Too technical / confusing" ? "the AI industry has a gatekeeping problem. Experts use jargon to sound smart and keep you dependent on their courses." : "scattered YouTube tutorials teach you tricks, not systems. You need a framework, not a collection of tips."} What you actually need are the 3 core skills that separate AI users from AI thinkers.`,
+        authority: `I've been working with AI since before ChatGPT made it mainstream. I've helped Fortune 500 companies implement AI strategies. I've trained ${business ? "over 2,000 business leaders" : technical ? "developers at companies like Google and Amazon" : "over 10,000 professionals across every industry"} to go from AI-curious to AI-fluent. And I'll tell you what I tell all of them: most of what you've been told about AI is either wrong, outdated, or designed to sell you the next course.`,
+        m1: `You're writing prompts when you should be building systems. ${basic ? "Everyone focuses on 'prompt engineering' — crafting the perfect single question. That's like learning to type one letter really well." : "Even experienced users treat AI as a question-answering box."} The real power is in ${business ? "AI workflows — chains of prompts that automate entire business processes" : technical ? "agentic systems and tool use — AI that can take actions, not just generate text" : "structured frameworks — reusable prompt systems that produce consistent, reliable output every time"}. But the specific architecture of these systems matters — get the structure wrong and you get inconsistent garbage.`,
+        m2: `You're using one tool when you should be orchestrating many. ${basic ? "ChatGPT is one tool. There are hundreds — and the magic happens when you combine them." : "You're probably doing everything in one chat window."} The professionals use ${business ? "AI stacks — content generation into editing into publishing into analytics, all connected" : technical ? "multi-model architectures — different models for different strengths, orchestrated together" : "tool chains — research tool feeds writing tool feeds design tool, each optimised for its job"}. But which tools, in what order, with what connections — that's the system I've built.`,
+        m3: `You're learning AI like it's 2023. ${fearBased ? "The landscape has changed completely in the last 6 months alone." : "What worked 6 months ago is already outdated."} ${technical ? "Fine-tuning is giving way to RAG. Prompt engineering is giving way to tool use. Single-model approaches are giving way to multi-agent systems." : "The tools, the capabilities, the best practices — they shift every quarter."} You need a learning SYSTEM that adapts, not a static course that's outdated before you finish it. But building that system requires understanding the meta-patterns — and that's what nobody teaches.`,
+        gap: `So which frameworks, exactly? Which tool stack? What meta-patterns? The concepts make sense — but the specific system makes it work. You could spend months piecing together YouTube tutorials that contradict each other... or follow the exact programme I've built.`,
+        value: `The complete system: 8-week AI mastery programme. ${business ? "Business automation frameworks" : technical ? "Technical architecture patterns" : "Professional workflow templates"} — updated monthly as the landscape evolves. Tool comparison database. ${basic ? "Zero-to-fluent prompt framework" : "Advanced system design patterns"}. PLUS: 100+ copy-paste prompt templates (£47 value, FREE). AI tool recommendation engine (£30 value, FREE). Private community with weekly live sessions (£97 value, FREE). Total value: £350+.`,
+        price: `An AI consultant charges £200–£500/hour. A corporate training programme costs £2,000+ per person. This entire system: £67. One payment. Lifetime access. Including all future updates — because in AI, staying current IS the product.`,
+      };
+    },
+    advice: [
+      { icon: "📖", title: "The best AI courses are free — from the companies that build AI", detail: "Anthropic (docs.anthropic.com), OpenAI (platform.openai.com/docs), Google (ai.google.dev) — they all publish comprehensive, up-to-date guides, prompt libraries, and tutorials. Most paid courses repackage this documentation with urgency marketing." },
+      { icon: "🔁", title: "Just use the tools — that IS the learning", detail: "The single best way to learn AI is to use it for real tasks, every day. Not hypothetical exercises from a course — YOUR actual work. Write emails, summarise documents, analyse data, brainstorm ideas. The tools teach you how to use them if you just... use them." },
+      { icon: "🎭", title: "Beware the recursion", detail: "Someone could run this exact funnel formula to sell an AI course about how to use AI to build a course about AI. Many 'AI gurus' made their money by being early to TALK about AI, not by actually building with it. Ask: what did they create with AI before they started teaching?" },
+      { icon: "📅", title: "'Prompt engineering' is already being automated away", detail: "Paying £500 to learn 'advanced prompt engineering' in 2026 is like paying for a course on Yahoo search operators in 2005. The tools are getting better at understanding plain language. The skill that matters is knowing WHAT to ask for, not HOW to phrase it." },
+      { icon: "🧠", title: "AI fluency is a thinking skill, not a technical skill", detail: "Understanding what AI can and can't do, knowing when to use it vs when not to, evaluating its outputs critically — these are judgment skills. No 8-week course teaches judgment. Experience does." },
+      { icon: "⚠️", title: "The 'AI will take your job' urgency is a sales tactic", detail: "AI is changing work — that's real. But the timeline is years, not weeks. Anyone creating panic to sell you a course is exploiting your anxiety for profit. Learn at your own pace. The tools aren't going anywhere." },
+      { icon: "🤔", title: "Most 'AI for business' is just... using software", detail: "If someone charges you £2,000 to learn how to use Claude or ChatGPT for your business, they've sold you a very expensive software tutorial. The interfaces are designed to be intuitive. Start with the free tier and explore." },
+      { icon: "🔄", title: "The landscape changes faster than any course can keep up", detail: "A course recorded 3 months ago may reference tools, models, or techniques that no longer exist or have been superseded. Free, regularly-updated resources (official docs, YouTube channels, newsletters) are inherently better for a fast-moving field." },
+    ],
+    resources: [
+      { name: "Anthropic docs & prompt library", desc: "Free guides from the people who built Claude", where: "docs.anthropic.com" },
+      { name: "OpenAI documentation", desc: "Comprehensive and regularly updated", where: "platform.openai.com/docs" },
+      { name: "Google AI Studio", desc: "Free, hands-on, learn by doing", where: "aistudio.google.com" },
+      { name: "Simon Willison's blog", desc: "Honest, technical, no-hype AI commentary", where: "simonwillison.net" },
+      { name: "Ethan Mollick", desc: "Thoughtful AI-in-practice research from Wharton", where: "oneusefulthing.org" },
+      { name: "fast.ai", desc: "Free deep learning course — actually rigorous", where: "fast.ai" },
+      { name: "The tool you're using right now", desc: "Seriously. Just use it. Ask it to teach you.", where: "You're already here" },
+    ],
+  },
+
+  language: {
+    name: "Language Learning",
+    icon: "🗣️",
+    tagline: "\"Polyglot who speaks 7 languages reveals why Duolingo will NEVER make you fluent...\"",
+    also: "Also: speed reading, memory techniques, study skills, exam prep courses",
+    color: "#3b82f6",
+    quiz: [
+      { id: "language", q: "What language are you learning?", opts: ["Spanish", "French", "Italian", "Other"], meta: "Romance languages dominate because they're the biggest market. The quiz looks personalised but the advice barely changes." },
+      { id: "level", q: "Your current level?", opts: ["Absolute beginner", "Know some basics", "Intermediate plateau", "Advanced but not fluent"], meta: "'Intermediate plateau' is the golden answer — it's the universal frustration that justifies the premium pitch." },
+      { id: "method", q: "What have you tried?", opts: ["Apps (Duolingo etc)", "Classroom / course", "Self-study / books", "Immersion / travel"], meta: "Whatever you pick, they'll explain why it was wrong. Apps? Too gamified. Classroom? Too slow. Each answer is a door they'll close." },
+      { id: "frustration", q: "Your biggest frustration?", opts: ["Can't remember vocab", "Can't understand natives", "Freeze when speaking", "No time to practise"], meta: "'Freeze when speaking' is the emotional goldmine. It touches on shame, fear, identity — deep motivators." },
+      { id: "goal", q: "What does fluency mean to you?", opts: ["Travel conversations", "Watch films without subs", "Professional fluency", "Think in the language"], meta: "The vaguer the goal, the easier to claim the course achieves it. 'Think in the language' is perfect — impossible to verify." },
+    ],
+    getProfile: (a) => {
+      const types = {
+        "Can't remember vocab": { type: "Connector", emoji: "🔗", line: "Your memory needs context, not repetition" },
+        "Can't understand natives": { type: "Decoder", emoji: "📡", line: "Your ears are trained for the wrong input" },
+        "Freeze when speaking": { type: "Activator", emoji: "⚡", line: "Your knowledge is passive — it needs unlocking" },
+        "No time to practise": { type: "Optimizer", emoji: "⏱️", line: "You need intensity over duration" },
+      };
+      return types[a.frustration] || types["Freeze when speaking"];
+    },
+    phases: (a, p) => {
+      const lang = a.language === "Other" ? "your target language" : a.language;
+      const inter = a.level === "Intermediate plateau" || a.level === "Advanced but not fluent";
+      const usedApps = a.method === "Apps (Duolingo etc)";
+      return {
+        mirror: `Based on your answers, you're the ${p.type} Type. ${a.frustration === "Can't remember vocab" ? `You learn a word in ${lang}, feel confident, and by Tuesday it's gone. You've reviewed the same flashcard 50 times and it still won't stick.` : a.frustration === "Can't understand natives" ? `You can read ${lang} reasonably well. You can construct sentences. But when a native speaker talks at normal speed, it's a blur. You catch maybe every third word.` : a.frustration === "Freeze when speaking" ? `You KNOW the words. In your head, you can form the sentence. But the moment someone speaks to you in ${lang}, your mind goes blank. The pressure kills your ability to think.` : `Between work and life, you manage maybe 10 minutes on an app. You feel like you're not progressing because you can't commit the hours.`}`,
+        agitate: `${usedApps ? `You've kept a Duolingo streak going for months — maybe years. You can match pictures to words. But put you in a café in ${lang === "Spanish" ? "Madrid" : lang === "French" ? "Paris" : lang === "Italian" ? "Rome" : "the country"} and you're lost.` : `You've invested real time and money in ${a.method === "Classroom / course" ? "classes" : "study materials"}. You can pass a written test. But real conversations? Different planet.`} ${inter ? `You've hit the intermediate plateau — the most demoralising stage. Beginners see fast progress. Advanced learners are fine. You're stuck in the middle, making the same mistakes, unable to break through.` : `People who started after you seem to be progressing faster. What are they doing differently?`} Maybe you just don't have a "language brain."`,
+        eliminate: `Here's the truth. It's NOT your brain. ${usedApps ? "Apps like Duolingo are brilliant at one thing: keeping you using the app. They're gamified retention tools, not language acquisition systems. The dopamine hit of a green streak is not the same as fluency." : "Traditional methods teach you ABOUT the language — grammar rules, vocabulary lists, conjugation tables. But knowing ABOUT a language and SPEAKING it are completely different skills."} ${inter ? "And the intermediate plateau isn't a ceiling — it's a sign you need a fundamentally different approach." : "The reason you're stuck is that you've been using tools designed for the wrong stage of acquisition."}`,
+        authority: `I speak 7 languages fluently. Not because I'm gifted — I failed French at school. It wasn't until I discovered the acquisition method used by polyglots and intelligence agencies that everything clicked. I went from zero to conversational ${lang === "Other" ? "in Mandarin" : `in ${lang}`} in 4 months. Now I've taught this method to over 20,000 students.`,
+        m1: `You're memorising when you should be acquiring. ${a.frustration === "Can't remember vocab" ? "Flashcards and word lists use your short-term memory. Real acquisition happens through comprehensible input — hearing and reading the language in context, just above your current level." : "Traditional study activates your analytical brain. Real fluency lives in your procedural memory — the same system that lets you ride a bike."} There's a specific input method — ${inter ? "calibrated for intermediate learners" : "designed for your exact level"} — that bypasses rote memorisation entirely. But the input type and difficulty matter — get it wrong and nothing sticks.`,
+        m2: `You're not speaking early enough — or you're speaking wrong. ${a.frustration === "Freeze when speaking" ? "The freeze happens because you're translating in your head. There's a specific technique that trains your brain to produce language directly — no translation step." : "Most learners either avoid speaking (too scary) or speak without structure (reinforcing errors)."} The method I use involves structured conversation drills that build automatic responses. Not memorised phrases — genuine spontaneous speech. But the drill format is specific and the progression matters.`,
+        m3: `Your practice schedule is fighting your brain. ${a.frustration === "No time to practise" ? "You don't need more time — you need the right time. 15 minutes of targeted practice at the right moment in your day beats 2 hours of unfocused study." : "Long study sessions create an illusion of progress. Your brain acquires language in short, intense bursts with sleep consolidation in between."} There's a specific scheduling protocol based on memory consolidation research — but most courses ignore it because longer = more expensive.`,
+        gap: `So what input, exactly? Which conversation drills? What schedule? The principles make sense — but the specific protocol makes it work. You could experiment for months... or follow the system I've built for ${lang} learners at your exact level.`,
+        value: `The complete system: 12-week acquisition programme for ${lang}. Daily 15-minute guided sessions. Comprehensible input library graded to your level. Structured conversation drills with audio. PLUS: pronunciation masterclass (£35 value, FREE). Cultural context guide (£20 value, FREE). Spaced repetition deck (£25 value, FREE). Total value: £200+.`,
+        price: `A private language tutor charges £30–50/hour. A 12-week course runs £500+. This entire system: £47. One payment. Lifetime access. Because language shouldn't be a luxury.`,
+      };
+    },
+    advice: [
+      { icon: "👂", title: "Input is king — listen and read a LOT", detail: "Comprehensible input (Krashen's theory) is well-supported. Listen to podcasts, watch TV, read graded readers — slightly above your level. Volume matters more than perfection." },
+      { icon: "🗣️", title: "Speak early, speak badly, speak often", detail: "You will be bad at first. That's fine. Find a conversation partner (italki, Tandem, local meetups) and start using the language in messy, imperfect conversations. Fluency comes from doing, not studying." },
+      { icon: "📱", title: "Apps are fine — for what they are", detail: "Duolingo, Babbel, Memrise — they're good for building initial vocabulary and habit formation. They're not the enemy. They're just not enough on their own. Use them as one tool among many." },
+      { icon: "🧠", title: "There's no 'language brain'", detail: "Everyone who learned their first language has the hardware for a second. Age makes it slower, not impossible. The biggest predictor of success is sustained contact with the language — not talent." },
+      { icon: "✈️", title: "Immersion works — but you can create it at home", detail: "Change your phone language. Listen to radio in the background. Follow social media accounts. Watch TV with target-language subtitles (not English ones). You don't need to move abroad." },
+      { icon: "📅", title: "Consistency beats intensity", detail: "15 minutes daily for a year beats 3 hours weekly for 3 months. Make it a habit that's so small you can't say no — then let it grow naturally." },
+    ],
+    resources: [
+      { name: "italki", desc: "Affordable tutors — real conversation practice", where: "italki.com" },
+      { name: "Dreaming Spanish / innerFrench", desc: "Comprehensible input channels", where: "YouTube" },
+      { name: "Tandem / HelloTalk", desc: "Free language exchange with native speakers", where: "App Store" },
+      { name: "Refold.la", desc: "Free immersion-based learning roadmap", where: "Website" },
+      { name: "Your local library", desc: "Graded readers, audio courses, reference grammars — all free", where: "Library" },
+      { name: "Local conversation groups", desc: "Meetup.com, Alliance Française, Instituto Cervantes", where: "In person" },
+    ],
+  },
+
+  skincare: {
+    name: "Skincare / Anti-Aging",
+    icon: "✨",
+    tagline: "\"Dermatologist reveals the 3 ingredients DESTROYING your skin barrier...\"",
+    also: "Also: anti-aging serums, clean beauty, hair loss, acne programmes, supplement gummies",
+    color: "#ec4899",
+    quiz: [
+      { id: "concern", q: "Your #1 skin concern?", opts: ["Wrinkles / aging", "Acne / breakouts", "Dullness / uneven tone", "Sensitivity / redness"], meta: "Every answer leads to a different 'skin type' but the same product. Aging is the premium market — highest willingness to spend." },
+      { id: "age", q: "Your age range?", opts: ["18–25", "26–35", "36–49", "50+"], meta: "Over 30 = 'prevention is critical NOW.' Over 40 = 'it's not too late to reverse the damage.' Fear of aging is the engine." },
+      { id: "routine", q: "Your current routine?", opts: ["Soap and water", "Basic cleanser + moisturiser", "Multi-step routine", "I've tried everything"], meta: "'I've tried everything' is the golden answer. 'You've been using the WRONG everything' is the pivot they need." },
+      { id: "spend", q: "Monthly skincare budget?", opts: ["Under £20", "£20–50", "£50–100", "Whatever it takes"], meta: "'Whatever it takes' signals price insensitivity. But even 'under £20' works — 'what if I told you the RIGHT product costs less than your current routine?'" },
+      { id: "frustration", q: "What frustrates you most?", opts: ["Products don't work", "Too many options", "Don't know what's real", "Skin getting worse"], meta: "'Don't know what's real' is perfect — it positions THEM as the only trustworthy source in a sea of marketing. The irony." },
+    ],
+    getProfile: (a) => {
+      const types = {
+        "Wrinkles / aging": { type: "Collagen Depleted", emoji: "⏳", line: "Your skin matrix is breaking down faster than it rebuilds" },
+        "Acne / breakouts": { type: "Barrier Compromised", emoji: "🛡️", line: "Your acid mantle is disrupted and your microbiome is imbalanced" },
+        "Dullness / uneven tone": { type: "Oxidative Stress", emoji: "🌫️", line: "Free radical damage is outpacing your skin's repair cycle" },
+        "Sensitivity / redness": { type: "Inflammation Dominant", emoji: "🔥", line: "Chronic micro-inflammation is degrading your skin from within" },
+      };
+      return types[a.concern] || types["Wrinkles / aging"];
+    },
+    phases: (a, p) => {
+      const aging = a.concern === "Wrinkles / aging";
+      const acne = a.concern === "Acne / breakouts";
+      const older = a.age === "36–49" || a.age === "50+";
+      const triedAll = a.routine === "I've tried everything" || a.routine === "Multi-step routine";
+      return {
+        mirror: `Based on your skin analysis, you're the ${p.type} Type. ${aging ? `You've noticed the lines creeping in. ${older ? "The face looking back at you in the mirror doesn't match how you feel inside." : "You're starting to see changes you weren't prepared for — fine lines, loss of firmness, dullness that wasn't there before."}` : acne ? "You're an adult dealing with breakouts that should have stopped in your teens. It's embarrassing, frustrating, and nothing seems to clear it for good." : a.concern === "Dullness / uneven tone" ? "Your skin looks tired even when you're not. No glow, no radiance — just flat, uneven texture that makes you look older than you are." : "Your skin reacts to everything. New products, weather changes, stress — it's constantly red, irritated, or uncomfortable."} ${a.frustration === "Products don't work" ? "You've spent hundreds on products that promised everything and delivered nothing." : ""}`,
+        agitate: `${triedAll ? "Your bathroom looks like a Boots stockroom. Serums, acids, oils, masks — you've tried them all. Some worked for a week. Most did nothing. A few made it worse." : "You've been told to 'just moisturise' or 'drink more water.' If it were that simple, you wouldn't be here."} ${aging ? `Every advert shows ${older ? "women your age looking 20 years younger. What do they know? What are they using?" : "perfect skin and you're wondering when yours stopped cooperating."}` : ""} ${a.frustration === "Don't know what's real" ? "Retinol, niacinamide, hyaluronic acid, peptides, vitamin C — everyone says something different. Dermatologists contradict influencers who contradict each other. How are you supposed to know what actually works?" : "You're starting to wonder if good skin is just genetics and everything else is marketing."}`,
+        eliminate: `Here's the truth. It's NOT your genetics. ${older ? "It's NOT your age — skin can regenerate at ANY age with the right protocol." : "It's NOT that you're doing something wrong."} The problem is that the skincare industry is a £130 billion business built on selling you 12-step routines when ${acne ? "your breakouts are being CAUSED by over-treating your skin" : aging ? "90% of anti-aging results come from just 3 ingredients" : "your skin barrier needs FEWER products, not more"}. Most of what you're putting on your face is filler, fragrance, and marketing.`,
+        authority: `I'm a board-certified dermatologist with 15 years of clinical practice. I've treated over 10,000 patients. And I'll tell you what I tell every one of them: throw away 80% of what's on your shelf. ${triedAll ? "The reason nothing worked isn't that you didn't find the right product — it's that you were using too many wrong ones." : "The reason your skin isn't responding is that you're missing the 3 evidence-based actives that actually change skin biology."}`,
+        m1: `Your cleanser is destroying your skin barrier. ${acne ? "You're probably using something 'deep cleansing' that strips your acid mantle, triggers overproduction of sebum, and causes MORE breakouts." : "Foaming cleansers, scrubs, micellar waters — most of them disrupt your skin's pH."} There's a specific pH range — 4.5–5.5 — that maintains barrier integrity. The wrong cleanser undoes everything that comes after it. But the specific formulation matters — get it wrong and you're wasting every product in your routine.`,
+        m2: `You're layering products in the wrong order — or using the wrong ones entirely. ${aging ? "Retinol is the gold standard for anti-aging. But 90% of over-the-counter retinol products are too weak, too unstable, or combined with ingredients that deactivate it." : acne ? "You're probably mixing actives that cancel each other out — or worse, combining acids that are destroying your barrier." : "Your skin needs 3 evidence-based actives in a specific order."} There's a layering protocol that maximises penetration and efficacy. But the concentrations and the ORDER matter — two products can work brilliantly alone and cancel each other out together.`,
+        m3: `You're not protecting what you build. ${aging ? "80% of visible aging is UV damage. Not genetics. Not time. Sun." : "Even the best actives are pointless if UV exposure is undoing the work every day."} SPF is non-negotiable — but most people use the wrong type, the wrong amount, or skip reapplication. There's a specific SPF protocol that actually works in real life — not just in a lab. But most sunscreen advice is either too complicated or too vague to follow.`,
+        gap: `So which cleanser pH, exactly? Which actives at which concentration? What SPF protocol? The principles make sense — but the specific formulations make it work. You could spend years and hundreds of pounds experimenting... or follow my exact protocol.`,
+        value: `The complete system: personalised routine builder for your skin type, product recommendation engine (drugstore AND premium), layering protocol guide, AM and PM routine videos. PLUS: ingredient decoder card (£15 value, FREE). Seasonal adjustment guide (£20 value, FREE). ${aging ? "Anti-aging meal plan" : "Skin-clearing meal plan"} (£25 value, FREE). Total value: £180+.`,
+        price: `A dermatologist consultation costs £150–£300. A year of wrong products costs more than that. This entire system: £37. One payment. Lifetime access. Because clear skin shouldn't require a medical salary.`,
+      };
+    },
+    advice: [
+      { icon: "☀️", title: "SPF is the only proven anti-aging product", detail: "UV damage causes roughly 80% of visible skin aging. A broad-spectrum SPF 30+ daily is worth more than every serum combined. This is the one thing the industry undersells because sunscreen is cheap." },
+      { icon: "🧴", title: "Gentle cleanser + moisturiser + SPF", detail: "That's genuinely 90% of a good skincare routine. Everything else is optimisation. If you're not doing these three consistently, adding a 12-step routine won't help." },
+      { icon: "💊", title: "Retinoids work — see your GP", detail: "Tretinoin (prescription retinoid) has decades of evidence for anti-aging and acne. Your GP can prescribe it. OTC retinol is weaker but still effective. You don't need a £90 serum — Cerave and The Ordinary work fine." },
+      { icon: "🚫", title: "'Clean beauty' is marketing, not science", detail: "'Chemical-free', 'toxin-free', 'clean' — these terms have no regulatory meaning. Water is a chemical. Everything is chemicals. Judge products by evidence and ingredients, not by branding." },
+      { icon: "🏥", title: "Persistent issues need a dermatologist, not an influencer", detail: "Acne, rosacea, eczema, hyperpigmentation — these are medical conditions. See your GP for a dermatology referral. No quiz can diagnose your skin." },
+      { icon: "📉", title: "More products ≠ better skin", detail: "Over-treating your skin is as common as under-treating it. Irritation, breakouts, and sensitivity are often caused by too many actives. When in doubt, simplify." },
+    ],
+    resources: [
+      { name: "NHS skin conditions guide", desc: "Free, evidence-based, no selling", where: "nhs.uk" },
+      { name: "British Association of Dermatologists", desc: "Find a real dermatologist", where: "bad.org.uk" },
+      { name: "Dr Sam Bunting", desc: "Evidence-based skincare — no nonsense", where: "YouTube" },
+      { name: "The Ordinary / Cerave", desc: "Effective, affordable, no-frills products", where: "Boots / Superdrug" },
+      { name: "Paula's Choice Ingredient Dictionary", desc: "Look up any ingredient — what it does and doesn't do", where: "paulaschoice.com" },
+    ],
+  },
+
+  dogs: {
+    name: "Dog Training",
+    icon: "🐕",
+    tagline: "\"Certified behaviourist reveals why your dog STILL doesn't listen...\"",
+    also: "Also: puppy programmes, separation anxiety courses, reactive dog masterclasses, raw feeding",
+    color: "#f97316",
+    quiz: [
+      { id: "issue", q: "Your biggest challenge?", opts: ["Pulling on lead", "Recall / won't come back", "Reactivity / barking", "Separation anxiety"], meta: "Emotional gold. Dog owners feel guilt, frustration, and fear. Each answer triggers a different shame angle — 'are YOU the problem?'" },
+      { id: "age", q: "How old is your dog?", opts: ["Puppy (under 1)", "Adolescent (1–2)", "Adult (2–7)", "Senior (7+)"], meta: "'Adolescent' is the money answer — owners are desperate because their cute puppy became a nightmare. Maximum emotional urgency." },
+      { id: "tried", q: "What have you tried?", opts: ["YouTube videos", "Group classes", "1-to-1 trainer", "Nothing yet"], meta: "Whatever they pick: 'That approach was WRONG for your dog's personality type.' Sound familiar?" },
+      { id: "breed", q: "Your dog's type?", opts: ["Small / companion", "Medium / working", "Large / guardian", "Mixed / rescue"], meta: "'Rescue' adds an extra emotional lever — 'your rescue has TRAUMA that generic training can't address.' Guilt + protectiveness." },
+      { id: "feel", q: "How does it make you feel?", opts: ["Frustrated", "Embarrassed", "Worried for their safety", "Like I'm failing them"], meta: "'Like I'm failing them' is the nuclear option. They'll use this exact emotion to sell the programme. You're not buying training — you're buying absolution." },
+    ],
+    getProfile: (a) => {
+      const types = {
+        "Pulling on lead": { type: "Drive-Dominant", emoji: "🔥", line: "Your dog's prey drive is overriding their training" },
+        "Recall / won't come back": { type: "Independence-Wired", emoji: "🦊", line: "Your dog's confidence exceeds their bond threshold" },
+        "Reactivity / barking": { type: "Hyper-Vigilant", emoji: "⚡", line: "Your dog's nervous system is stuck in alert mode" },
+        "Separation anxiety": { type: "Attachment-Intense", emoji: "💔", line: "Your dog's bond security has been disrupted" },
+      };
+      return types[a.issue] || types["Pulling on lead"];
+    },
+    phases: (a, p) => {
+      const rescue = a.breed === "Mixed / rescue";
+      const puppy = a.age === "Puppy (under 1)" || a.age === "Adolescent (1–2)";
+      const guilty = a.feel === "Like I'm failing them";
+      return {
+        mirror: `Based on your answers, your dog's behavioural profile is ${p.type}. ${a.issue === "Pulling on lead" ? "Every walk is a battle. Your arms ache. You've tried stopping, turning around, treats — nothing works for more than 30 seconds. You've started dreading walks." : a.issue === "Recall / won't come back" ? "The moment the lead comes off, they're gone. You've shouted yourself hoarse at the park. Other owners watch while your dog completely ignores you. It's humiliating — and terrifying near roads." : a.issue === "Reactivity / barking" ? "Other dogs, strangers, bikes, doorbells — the barking is relentless. You cross the street to avoid triggers. You've stopped having people over. Your dog's world is shrinking because you can't manage the reactions." : "You can't leave the house without the howling starting. Neighbours have complained. You've come home to destroyed furniture. You feel trapped — you can't even go to the shops without guilt."} ${guilty ? "And the worst part — you feel like YOU'RE the problem. Like a better owner would have fixed this by now." : ""}`,
+        agitate: `${a.tried === "YouTube videos" ? "You've watched every 'how to stop your dog pulling' video on YouTube. They make it look easy — happy dogs, perfect recall, treat pouches, sunshine. But YOUR dog didn't watch the video." : a.tried === "Group classes" ? "You've been to classes. Your dog was either the best one there (then reverted at home) or the worst one there (and you left feeling terrible)." : a.tried === "1-to-1 trainer" ? "You've even paid for a trainer. It helped in the session, then your dog went straight back to the same behaviour. You've spent hundreds and you're back to square one." : "You don't know where to start and every piece of advice contradicts the last."} ${rescue ? "And everyone says 'oh, rescues are hard' like that's supposed to make you feel better. It doesn't. You chose this dog to give them a better life and you feel like you're failing." : puppy ? "People said it was 'just a phase.' It's been months. It's not a phase." : "This has been going on for long enough that you've started to think it's just who your dog IS."} ${a.issue === "Separation anxiety" ? "You've cancelled plans. You've turned down jobs. Your life revolves around never leaving your dog alone." : ""}`,
+        eliminate: `Here's the truth. It's NOT your dog's fault. ${rescue ? "And it's not because they're a rescue — plenty of rescue dogs are perfectly behaved." : puppy ? "And it's not just adolescence — though that's real." : "And it's not their breed."} It's NOT your fault either. The problem is that most dog training advice is based on outdated dominance theory — or it's one-size-fits-all positive reinforcement that ignores your dog's individual behavioural profile. ${a.issue === "Reactivity / barking" ? "Reactivity isn't disobedience. It's emotional dysregulation." : a.issue === "Separation anxiety" ? "Separation anxiety isn't naughtiness. It's genuine distress." : "The behaviour you're seeing isn't defiance — it's communication."} You need an approach designed for ${p.type} dogs specifically.`,
+        authority: `I'm a certified clinical animal behaviourist with 12 years of experience. I've worked with over 3,000 dogs — including cases other trainers gave up on. ${a.issue === "Reactivity / barking" ? "Reactivity is my speciality." : a.issue === "Separation anxiety" ? "Separation anxiety is the most misunderstood behaviour problem, and it's what I've built my career solving." : `${a.issue} is one of the most common issues I see — and one of the most solvable.`} I used to be where you are. My own dog was reactive. Nothing worked until I developed this method.`,
+        m1: `You're correcting the behaviour instead of the emotion. ${a.issue === "Pulling on lead" ? "Stopping and starting, jerking the lead, saying 'heel' — you're addressing the SYMPTOM. The pull comes from arousal and anticipation. You need to change the emotional state BEFORE the walk, using a specific pre-walk protocol." : a.issue === "Reactivity / barking" ? "Telling them 'no' or 'quiet' does nothing — they're in fight-or-flight. You need to work UNDER threshold with a specific desensitisation protocol that rewires their emotional response." : "You're managing the symptom, not the cause. There's a specific protocol that addresses the ROOT emotional pattern."} But the threshold distances, the timing, and the reward structure have to be precise — get them wrong and you reinforce the problem.`,
+        m2: `Your reward timing is off — by milliseconds. ${guilty ? "This isn't about you being a bad owner — it's about neuroscience." : ""} Dogs learn in a 1–2 second window. If your marker or reward is even slightly late, you're reinforcing the WRONG behaviour. There's a specific marker-training protocol that creates precise communication. But the marker word, the delivery method, and the reinforcement schedule are all specific — and they're different for ${p.type} dogs.`,
+        m3: `Your training environment is wrong. ${a.tried === "Group classes" ? "Group classes are the worst environment for a dog with this profile — too many distractions, too much pressure, wrong socialisation context." : "You're probably trying to train in the environment where the problem happens — which is like trying to learn maths during a fire alarm."} There's a specific environmental progression — 5 stages from calm to challenging — that builds reliable behaviour. But jumping stages or spending too long at one stage both backfire.`,
+        gap: `So what protocol, exactly? What marker system? Which environmental stages? The principles make sense — but the specific programme makes it work. You could spend months experimenting with your dog's emotions... or follow the system I've created for ${p.type} dogs.`,
+        value: `The complete system: 8-week behaviour modification programme for ${(a.issue || "your challenge").toLowerCase()}. Daily training videos (10 minutes). Marker training masterclass. Environmental progression guide. ${rescue ? "Rescue-specific trauma module." : puppy ? "Adolescent brain development guide." : "Breed-specific adaptation notes."} PLUS: emergency protocol card (£15 value, FREE). Enrichment activities library (£20 value, FREE). Private community for support (£30 value, FREE). Total value: £180+.`,
+        price: `A behaviourist consultation costs £150–£300 per session. Most dogs need 4–6 sessions: that's up to £1,800. This entire programme: £57. One payment. Lifetime access. Because every dog deserves an owner who understands them.`,
+      };
+    },
+    advice: [
+      { icon: "🏥", title: "See a real behaviourist, not just a trainer", detail: "For serious issues (reactivity, separation anxiety, aggression), you need an ABTC-registered Clinical Animal Behaviourist — not a self-certified 'dog whisperer.' Your vet can refer you. This is a regulated profession." },
+      { icon: "🧠", title: "Behaviour problems are usually emotional problems", detail: "Reactivity is fear or frustration. Separation anxiety is genuine distress. Pulling is arousal. Understanding the EMOTION behind the behaviour is step one — and no amount of 'sit' and 'stay' addresses it." },
+      { icon: "🏃", title: "Exercise and enrichment solve more than training", detail: "A bored, under-stimulated dog will find its own entertainment. Sniff walks, puzzle feeders, chews, training games — mental stimulation is as important as physical exercise." },
+      { icon: "⏱️", title: "Consistency over intensity", detail: "5 minutes of daily practice beats a 1-hour weekend session. Dogs learn through repetition in short bursts. Make training part of daily life, not a separate event." },
+      { icon: "🚫", title: "Avoid dominance-based trainers", detail: "Alpha rolls, prong collars, 'pack leader' theory — these are based on debunked wolf research from the 1940s. Force-based methods suppress behaviour without addressing the cause, and often make problems worse." },
+      { icon: "❤️", title: "You're not failing your dog", detail: "The fact that you're looking for help means you care. Most behaviour problems are fixable with time, patience, and the right guidance. Your dog doesn't need a perfect owner — they need a consistent one." },
+    ],
+    resources: [
+      { name: "ABTC (Animal Behaviour & Training Council)", desc: "Find a registered behaviourist", where: "abtc.org.uk" },
+      { name: "Dogs Trust", desc: "Free behaviour advice line and resources", where: "dogstrust.org.uk" },
+      { name: "Kikopup (Emily Larlham)", desc: "Force-free training — excellent for all levels", where: "YouTube" },
+      { name: "Your vet", desc: "Rule out pain or medical causes first — always", where: "In person" },
+      { name: "RSPCA behaviour hub", desc: "Free, evidence-based guidance", where: "rspca.org.uk" },
+    ],
+  },
+};
+
+// ═══════════════════════════════════════════════════════════
+// SHARED FORMULA — identical across all funnels
+// ═══════════════════════════════════════════════════════════
+const PHASE_TEMPLATE = [
+  { key: "mirror", label: "Mirror & Validate", icon: "🪞", technique: "Echo your quiz answers back as if it's a diagnosis. It's a mail merge with emotional language. They know what you said because YOU just told them." },
+  { key: "agitate", label: "Agitate the Pain", icon: "🔪", technique: "Widen the gap between where you are and where you want to be. Create frustration, inadequacy, urgency. You need to feel the problem is UNBEARABLE before they offer the solution." },
+  { key: "eliminate", label: "Eliminate Alternatives", icon: "🚫", technique: "Everything you've tried is wrong. Everything you might try alone will fail. Only THEY have the answer. This closes the door on self-directed learning." },
+  { key: "authority", label: "Authority via Vulnerability", icon: "🎭", technique: "\"Even the EXPERT struggled with YOUR problem.\" Builds trust ('they understand me') while reinforcing that you can't solve this alone." },
+  { key: "m1", label: "Mistake 1", icon: "❌", technique: "Real concept + proprietary framing. The principle is freely available but they withhold the specific implementation. 'You need SPECIFIC...' = buy the programme." },
+  { key: "m2", label: "Mistake 2", icon: "❌", technique: "Same pattern. Genuine technique, paywalled details. 'The key is knowing exactly...' — if you knew, you wouldn't need them." },
+  { key: "m3", label: "Mistake 3", icon: "❌", technique: "Same again. By now you've heard three plausible-sounding fixes and can't do any of them. The need is manufactured." },
+  { key: "gap", label: "The Gap", icon: "🕳️", technique: "THE critical moment. Enough to believe, not enough to DO. You're standing at the edge — the only bridge is their product. This is the entire funnel distilled." },
+  { key: "value", label: "Value Stack", icon: "💰", technique: "Anchor high with inflated 'values' for items that cost nothing to produce. Bonuses that are probably short PDFs. Makes the actual price feel like theft." },
+  { key: "price", label: "The Price Drop", icon: "🏷️", technique: "After hearing £200+ and comparing to alternatives (trainers, classes, workshops), the actual price feels irrational NOT to pay. Classic anchoring bias." },
+  { key: "risk", label: "Risk Reversal", icon: "🛡️", technique: "60-day guarantee sounds generous. But refund processes are designed with friction — email-only, proof-of-effort required, narrow windows. Most people never claim." },
+  { key: "scarcity", label: "Scarcity + Future Pace", icon: "⏰", technique: "Make you FEEL the success before buying (emotional commitment), then create fake urgency. The offer is always available. The page never changes. Try it." },
+  { key: "objections", label: "Objection Handling", icon: "🤔", technique: "Pre-empt every 'but...' Each doubt is reframed as a reason TO buy. Classic sales technique — handle the objection before it becomes a decision." },
+];
+
+// ─── Components ───
+function Ann({ children, color = "#ff4848" }) {
+  return <div style={{ margin: "12px 0", padding: "10px 12px", background: `${color}0a`, border: `1px solid ${color}28`, borderRadius: 8, fontSize: 11.5, lineHeight: 1.6, color: color, fontFamily: "var(--m)" }}>{children}</div>;
+}
+
+function App() {
+  const [funnel, setFunnel] = useState(null);
+  const [phase, setPhase] = useState("pick");
+  const [qi, setQi] = useState(0);
+  const [ans, setAns] = useState({});
+  const [sel, setSel] = useState(null);
+  const [vi, setVi] = useState(0);
+  const [tab, setTab] = useState("video");
+  const [notes, setNotes] = useState(true);
+  const [lp, setLp] = useState(0);
+  const [lm, setLm] = useState(0);
+  const ref = useRef(null);
+  const top = useCallback(() => ref.current?.scrollTo({ top: 0, behavior: "smooth" }), []);
+
+  const f = funnel ? FUNNELS[funnel] : null;
+  const profile = f ? f.getProfile(ans) : null;
+  const scripts = f && profile && phase === "results" ? f.phases(ans, profile) : {};
+
+  const pick = (o) => { setSel(o); setTimeout(() => { setAns(a => ({ ...a, [f.quiz[qi].id]: o })); setSel(null); if (qi < f.quiz.length - 1) setQi(i => i + 1); else setPhase("loading"); }, 280); };
+
+  useEffect(() => {
+    if (phase !== "loading") return;
+    const msgs = ["Processing your answers...", "Cross-referencing proprietary database...", "Running our algorithm...", "Almost there..."];
+    const t1 = setInterval(() => setLp(p => { if (p >= 100) { clearInterval(t1); return 100; } return p + 1; }), 75);
+    const t2 = setInterval(() => setLm(m => Math.min(m + 1, msgs.length - 1)), 2200);
+    const t3 = setTimeout(() => { setPhase("results"); setTab("video"); setVi(0); }, 8500);
+    return () => { clearInterval(t1); clearInterval(t2); clearTimeout(t3); };
+  }, [phase]);
+
+  useEffect(top, [phase, qi, vi, tab]);
+
+  const restart = (full) => { if (full) setFunnel(null); setPhase(full ? "pick" : "quiz"); setQi(0); setAns({}); setVi(0); setTab("video"); setLp(0); setLm(0); top(); };
+
+  const loadMsgs = ["Processing your answers...", "Cross-referencing proprietary database...", "Running our algorithm...", "Almost there..."];
+  const accent = f?.color || "#ff4848";
+
+  return (
+    <div ref={ref} style={{ "--d": "'Oswald',sans-serif", "--m": "'IBM Plex Mono',monospace", minHeight: "100vh", background: "#09091a", color: "#e4e4e4", fontFamily: "var(--m)", overflowY: "auto" }}>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:ital,wght@0,300;0,400;0,600;1,400&family=Oswald:wght@300;400;600;700&display=swap');
+        @keyframes spin{to{transform:rotate(360deg)}}
+        @keyframes up{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+        *{box-sizing:border-box;margin:0}body{margin:0}.fi{animation:up .4s ease forwards}
+      `}</style>
+
+      <div style={{ maxWidth: 500, margin: "0 auto", padding: "24px 16px 56px" }}>
+
+        {/* ═══ FUNNEL PICKER ═══ */}
+        {phase === "pick" && (
+          <div className="fi" style={{ textAlign: "center", paddingTop: 28 }}>
+            <div style={{ fontSize: 36, marginBottom: 8 }}>🎣</div>
+            <h1 style={{ fontFamily: "var(--d)", fontSize: 22, fontWeight: 700, textTransform: "uppercase", letterSpacing: 2, lineHeight: 1.2, marginBottom: 4 }}>Choose Your Funnel</h1>
+            <p style={{ fontFamily: "var(--d)", fontSize: 13, fontWeight: 300, textTransform: "uppercase", letterSpacing: 3, color: "#ff4848", marginBottom: 18 }}>Same Formula. Different Skin.</p>
+            <p style={{ fontSize: 12, color: "#666", lineHeight: 1.6, maxWidth: 400, margin: "0 auto 8px" }}>
+              Pick a niche below. You'll go through a realistic marketing quiz, then watch an AI-generated sales pitch that adapts to your answers — annotated with the manipulation technique at every step.
+            </p>
+            <p style={{ fontSize: 12, color: "#666", lineHeight: 1.6, maxWidth: 400, margin: "0 auto 18px" }}>
+              The point: the <em>formula is identical</em> regardless of the subject. Mirror, agitate, eliminate, authority, withhold, stack, price, reverse, scare, handle. Every. Single. Time.
+            </p>
+
+            <div style={{ display: "flex", flexDirection: "column", gap: 10, marginTop: 8 }}>
+              {Object.entries(FUNNELS).map(([key, f]) => (
+                <button key={key} onClick={() => { setFunnel(key); setPhase("splash"); }} style={{
+                  padding: "16px", background: "#111128", border: `1px solid ${f.color}30`,
+                  borderRadius: 10, cursor: "pointer", textAlign: "left", transition: "all 0.2s",
+                  display: "flex", alignItems: "center", gap: 12,
+                }}
+                  onMouseEnter={e => { e.currentTarget.style.borderColor = f.color + "66"; e.currentTarget.style.background = "#141430"; }}
+                  onMouseLeave={e => { e.currentTarget.style.borderColor = f.color + "30"; e.currentTarget.style.background = "#111128"; }}
+                >
+                  <span style={{ fontSize: 28 }}>{f.icon}</span>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontFamily: "var(--d)", fontSize: 15, fontWeight: 600, color: "#eee" }}>{f.name}</div>
+                    <div style={{ fontSize: 11, color: "#666", fontStyle: "italic", marginTop: 2 }}>{f.tagline}</div>
+                    {f.also && <div style={{ fontSize: 9.5, color: "#777", marginTop: 3 }}>{f.also}</div>}
+                  </div>
+                  <span style={{ color: f.color, fontSize: 16 }}>→</span>
+                </button>
+              ))}
+            </div>
+
+            <div style={{ marginTop: 20, padding: "9px 12px", background: "rgba(255,180,66,0.05)", border: "1px solid rgba(255,180,66,0.12)", borderRadius: 7, fontSize: 10.5, color: "#997733", textAlign: "left" }}>
+              ⚠️ All scripts below are AI-generated examples demonstrating common marketing funnel techniques. They are not real marketing materials — they illustrate the formula.
+            </div>
+          </div>
+        )}
+
+        {/* ═══ SPLASH ═══ */}
+        {phase === "splash" && f && (
+          <div className="fi" style={{ textAlign: "center", paddingTop: 28 }}>
+            <div style={{ fontSize: 40, marginBottom: 8 }}>{f.icon}</div>
+            <h2 style={{ fontFamily: "var(--d)", fontSize: 20, fontWeight: 700, textTransform: "uppercase", letterSpacing: 2, marginBottom: 4 }}>Free {f.name} Quiz</h2>
+            <p style={{ fontSize: 12, color: "#666", lineHeight: 1.6, maxWidth: 380, margin: "0 auto 20px" }}>
+              Answer {f.quiz.length} quick questions. We'll generate a 'personalised' sales pitch adapted to your answers, then show you the technique behind every line.
+            </p>
+            <Ann color={accent}>🎯 The quiz IS the product. Each answer is a micro-commitment — you give personal data, invest time, and feel the results are 'earned.' By the end of {f.quiz.length} questions, leaving feels like wasting what you've already put in. The price at the end is deliberately low and reasonable-looking — because the real revenue comes from upsells, subscriptions, and supplements AFTER you're committed.</Ann>
+            <button onClick={() => setPhase("quiz")} style={{ marginTop: 8, padding: "13px 40px", background: `linear-gradient(135deg,${accent},${accent}cc)`, color: "#fff", border: "none", borderRadius: 8, fontFamily: "var(--d)", fontSize: 15, fontWeight: 600, textTransform: "uppercase", letterSpacing: 2, cursor: "pointer", boxShadow: `0 4px 20px ${accent}40` }}>
+              Start Quiz →
+            </button>
+            <p style={{ marginTop: 10, fontSize: 10, color: "#666" }}>No email. No upsells. Promise.</p>
+            <button onClick={() => restart(true)} style={{ marginTop: 14, background: "none", border: "none", color: "#666", fontSize: 10.5, cursor: "pointer", fontFamily: "var(--m)", textDecoration: "underline" }}>← Pick a different funnel</button>
+          </div>
+        )}
+
+        {/* ═══ QUIZ ═══ */}
+        {phase === "quiz" && f && (
+          <div className="fi" key={qi}>
+            <div style={{ textAlign: "center", marginBottom: 3 }}>
+              <span style={{ fontSize: 9, textTransform: "uppercase", letterSpacing: 3, color: "#777", fontFamily: "var(--d)" }}>{f.name} · Question {qi + 1} / {f.quiz.length}</span>
+            </div>
+            <div style={{ width: "100%", height: 3, background: "#141428", borderRadius: 2, overflow: "hidden", marginBottom: 18 }}>
+              <div style={{ width: `${((qi + 1) / f.quiz.length) * 100}%`, height: "100%", background: `linear-gradient(90deg,${accent},${accent}bb)`, transition: "width 0.4s", borderRadius: 2 }} />
+            </div>
+            <h2 style={{ fontFamily: "var(--d)", fontSize: 22, fontWeight: 700, textAlign: "center", marginBottom: 16 }}>{f.quiz[qi].q}</h2>
+            <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
+              {f.quiz[qi].opts.map(o => (
+                <button key={o} onClick={() => pick(o)} style={{
+                  padding: "12px 14px", background: sel === o ? `linear-gradient(135deg,${accent},${accent}bb)` : "#111128",
+                  color: sel === o ? "#fff" : "#aaa", border: `1px solid ${sel === o ? accent : "#1e1e38"}`,
+                  borderRadius: 8, fontSize: 13.5, cursor: "pointer", textAlign: "left", transition: "all 0.2s", fontFamily: "var(--m)",
+                }}>{o}</button>
+              ))}
+            </div>
+            {notes && <Ann color={accent}>🎯 {f.quiz[qi].meta}</Ann>}
+            {qi > 0 && notes && (
+              <div style={{ fontSize: 10, color: "#666", textAlign: "center", marginTop: 6 }}>
+                {qi + 1} data points given. Each one makes leaving feel like waste.
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ═══ LOADING ═══ */}
+        {phase === "loading" && (
+          <div style={{ textAlign: "center", padding: "44px 0" }}>
+            <div style={{ width: 52, height: 52, margin: "0 auto 20px", border: `3px solid #141428`, borderTop: `3px solid ${accent}`, borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
+            <p style={{ fontSize: 12, color: "#777", marginBottom: 14, minHeight: 28 }}>{loadMsgs[lm]}</p>
+            <div style={{ width: "60%", height: 4, background: "#141428", borderRadius: 2, margin: "0 auto", overflow: "hidden" }}>
+              <div style={{ width: `${lp}%`, height: "100%", background: `linear-gradient(90deg,${accent},${accent}bb)`, borderRadius: 2, transition: "width 0.08s" }} />
+            </div>
+            {notes && <Ann color={accent}>🎯 Pure theatre. You answered {f?.quiz.length || 5} multiple-choice questions. A calculator watch from 1985 could process this in microseconds. But the wait makes it feel scientific, valuable, and worth protecting.</Ann>}
+          </div>
+        )}
+
+        {/* ═══ RESULTS ═══ */}
+        {phase === "results" && f && profile && (
+          <div>
+            <div style={{ padding: "7px 10px", background: "rgba(255,180,66,0.04)", border: "1px solid rgba(255,180,66,0.1)", borderRadius: 6, fontSize: 10, color: "#886622", marginBottom: 10, textAlign: "center" }}>
+              ⚠️ AI-generated example of {f.name.toLowerCase()} marketing funnel techniques
+            </div>
+
+            {/* Profile badge */}
+            <div style={{ display: "flex", alignItems: "center", gap: 9, padding: "10px 12px", background: "#111128", borderRadius: 9, marginBottom: 12 }}>
+              <span style={{ fontSize: 26 }}>{profile.emoji}</span>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontFamily: "var(--d)", fontSize: 8.5, textTransform: "uppercase", letterSpacing: 2, color: accent }}>Your "type"</div>
+                <div style={{ fontFamily: "var(--d)", fontSize: 16, fontWeight: 700 }}>The {profile.type} Type</div>
+                <div style={{ fontSize: 10, color: "#777", fontStyle: "italic" }}>{profile.line}</div>
+              </div>
+            </div>
+
+            {/* Controls row */}
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12, gap: 8 }}>
+              <button onClick={() => setNotes(n => !n)} style={{ padding: "4px 10px", background: notes ? `${accent}12` : "#111128", border: `1px solid ${notes ? accent + "33" : "#1e1e38"}`, borderRadius: 5, color: notes ? accent : "#777", fontSize: 10, cursor: "pointer", fontFamily: "var(--m)", whiteSpace: "nowrap" }}>
+                {notes ? "🔍 Hide" : "🔍 Show"} notes
+              </button>
+              <div style={{ display: "flex", gap: 2, background: "#111128", borderRadius: 6, padding: 2 }}>
+                {[{ k: "video", l: "📹 Pitch" }, { k: "advice", l: "✅ Real" }, { k: "formula", l: "🔬 Formula" }].map(t => (
+                  <button key={t.k} onClick={() => { setTab(t.k); top(); }} style={{
+                    padding: "6px 9px", background: tab === t.k ? accent : "transparent",
+                    color: tab === t.k ? "#fff" : "#777", border: "none", borderRadius: 4,
+                    fontSize: 10.5, fontWeight: 600, cursor: "pointer", fontFamily: "var(--m)",
+                  }}>{t.l}</button>
+                ))}
+              </div>
+            </div>
+
+            {/* ── PITCH TAB ── */}
+            {tab === "video" && (
+              <div className="fi" key={vi}>
+                <div style={{ display: "flex", gap: 2, marginBottom: 14 }}>
+                  {PHASE_TEMPLATE.map((_, i) => (
+                    <div key={i} onClick={() => { setVi(i); top(); }} style={{ flex: 1, height: 3, borderRadius: 2, cursor: "pointer", background: i <= vi ? `linear-gradient(90deg,${accent},${accent}bb)` : "#181830" }} />
+                  ))}
+                </div>
+
+                <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
+                  <span style={{ fontSize: 22 }}>{PHASE_TEMPLATE[vi].icon}</span>
+                  <div>
+                    <div style={{ fontFamily: "var(--d)", fontSize: 8.5, textTransform: "uppercase", letterSpacing: 2, color: accent }}>{vi + 1} / {PHASE_TEMPLATE.length}</div>
+                    <h3 style={{ fontFamily: "var(--d)", fontSize: 17, fontWeight: 700 }}>{PHASE_TEMPLATE[vi].label}</h3>
+                  </div>
+                </div>
+
+                {notes && <div style={{ padding: "9px 11px", marginBottom: 10, background: `${accent}08`, border: `1px solid ${accent}1a`, borderRadius: 8, fontSize: 11, lineHeight: 1.6, color: accent + "cc" }}>🎭 <strong>Technique:</strong> {PHASE_TEMPLATE[vi].technique}</div>}
+
+                <div style={{ background: "#111128", borderRadius: 9, padding: "13px 13px", borderLeft: `3px solid ${accent}`, marginBottom: 14 }}>
+                  <p style={{ fontSize: 12.5, lineHeight: 1.75, color: "#bbb", fontStyle: "italic" }}>
+                    "{(() => {
+                      const k = PHASE_TEMPLATE[vi].key;
+                      if (scripts[k]) return scripts[k];
+                      if (k === "risk") return "Start today. Follow it for 60 days. If it doesn't work, send ONE email — full refund. Zero risk. It works or your money back.";
+                      if (k === "scarcity") return "Imagine where you'll be in 3 months. The confidence. The results. You'll wish you'd started sooner. This offer is ONLY available through this page. Once you leave, the price goes back up.";
+                      if (k === "objections") return "\"I don't have time.\" — It's designed for busy people. \"I've tried everything.\" — Not this approach. \"Not sure it works for me.\" — 60-day guarantee. Zero risk.";
+                      return "";
+                    })()}"
+                  </p>
+                </div>
+
+                <div style={{ display: "flex", gap: 6 }}>
+                  {vi > 0 && <button onClick={() => { setVi(i => i - 1); top(); }} style={{ flex: 1, padding: 10, background: "#111128", color: "#777", border: "1px solid #1e1e38", borderRadius: 6, fontSize: 11.5, cursor: "pointer", fontFamily: "var(--m)" }}>←</button>}
+                  {vi < PHASE_TEMPLATE.length - 1 ? (
+                    <button onClick={() => { setVi(i => i + 1); top(); }} style={{ flex: 3, padding: 10, background: `linear-gradient(135deg,${accent},${accent}bb)`, color: "#fff", border: "none", borderRadius: 6, fontFamily: "var(--d)", fontSize: 13, fontWeight: 600, textTransform: "uppercase", letterSpacing: 1, cursor: "pointer" }}>Next →</button>
+                  ) : (
+                    <button onClick={() => { setTab("advice"); top(); }} style={{ flex: 3, padding: 10, background: "linear-gradient(135deg,#48c78e,#36a374)", color: "#fff", border: "none", borderRadius: 6, fontFamily: "var(--d)", fontSize: 13, fontWeight: 600, textTransform: "uppercase", letterSpacing: 1, cursor: "pointer" }}>Real advice →</button>
+                  )}
+                </div>
+
+                {/* Phase list */}
+                <div style={{ marginTop: 18 }}>
+                  {PHASE_TEMPLATE.map((p, i) => (
+                    <div key={i} onClick={() => { setVi(i); top(); }} style={{
+                      display: "flex", alignItems: "center", gap: 7, padding: "6px 8px", marginBottom: 2,
+                      background: i === vi ? `${accent}0c` : "transparent",
+                      border: `1px solid ${i === vi ? accent + "20" : "transparent"}`,
+                      borderRadius: 5, cursor: "pointer",
+                    }}>
+                      <span style={{ fontSize: 12, width: 20, textAlign: "center" }}>{p.icon}</span>
+                      <span style={{ fontSize: 10.5, color: i === vi ? accent : i < vi ? "#777" : "#666", fontWeight: i === vi ? 600 : 400, flex: 1 }}>{p.label}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* ── REAL ADVICE TAB ── */}
+            {tab === "advice" && (
+              <div className="fi">
+                <h3 style={{ fontFamily: "var(--d)", fontSize: 17, fontWeight: 700, marginBottom: 2 }}>What Actually Works</h3>
+                <p style={{ fontSize: 10.5, color: "#777", marginBottom: 14 }}>Evidence-based. Free or cheap. No funnel required.</p>
+                {f.advice.map((r, i) => (
+                  <div key={i} style={{ background: "#111128", borderRadius: 9, padding: "12px 12px", marginBottom: 7, borderLeft: "3px solid #48c78e" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 7, marginBottom: 4 }}>
+                      <span style={{ fontSize: 15 }}>{r.icon}</span>
+                      <h4 style={{ fontFamily: "var(--d)", fontSize: 11.5, fontWeight: 600, color: "#eee", textTransform: "uppercase", letterSpacing: 0.5 }}>{r.title}</h4>
+                    </div>
+                    <p style={{ fontSize: 11.5, color: "#777", lineHeight: 1.6 }}>{r.detail}</p>
+                  </div>
+                ))}
+                <div style={{ marginTop: 12 }}>
+                  <div style={{ fontSize: 9, textTransform: "uppercase", letterSpacing: 2, color: "#48c78e", marginBottom: 7 }}>Free / low-cost resources</div>
+                  {f.resources.map((r, i) => (
+                    <div key={i} style={{ display: "flex", justifyContent: "space-between", padding: "7px 10px", background: "#111128", borderRadius: 6, marginBottom: 3, alignItems: "center" }}>
+                      <div>
+                        <div style={{ fontSize: 11.5, color: "#ddd", fontWeight: 600 }}>{r.name}</div>
+                        <div style={{ fontSize: 9.5, color: "#777" }}>{r.desc}</div>
+                      </div>
+                      <div style={{ fontSize: 9, color: "#48c78e", whiteSpace: "nowrap" }}>{r.where}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* ── FORMULA TAB ── */}
+            {tab === "formula" && (
+              <div className="fi">
+                <h3 style={{ fontFamily: "var(--d)", fontSize: 17, fontWeight: 700, marginBottom: 2 }}>The Universal Formula</h3>
+                <p style={{ fontSize: 10.5, color: "#777", marginBottom: 14 }}>Every funnel. Every niche. Every time.</p>
+                {PHASE_TEMPLATE.map((p, i) => (
+                  <div key={i} style={{
+                    display: "flex", gap: 10, padding: "10px 11px", marginBottom: 4,
+                    background: "#111128", borderRadius: 8,
+                    borderLeft: `3px solid ${i < 4 ? "#8b5cf6" : i < 8 ? accent : "#48c78e"}`,
+                  }}>
+                    <span style={{ fontSize: 16, width: 24, textAlign: "center", flexShrink: 0, paddingTop: 1 }}>{p.icon}</span>
+                    <div>
+                      <div style={{ fontSize: 12, fontWeight: 600, color: "#ddd", marginBottom: 2 }}>{i + 1}. {p.label}</div>
+                      <div style={{ fontSize: 10.5, color: "#666", lineHeight: 1.5 }}>{p.technique}</div>
+                    </div>
+                  </div>
+                ))}
+                <div style={{ background: "rgba(72,199,142,0.06)", border: "1px solid rgba(72,199,142,0.14)", borderRadius: 9, padding: 13, marginTop: 12 }}>
+                  <div style={{ fontFamily: "var(--d)", fontSize: 9, textTransform: "uppercase", letterSpacing: 2, color: "#48c78e", marginBottom: 5 }}>The tell</div>
+                  <p style={{ fontSize: 11.5, color: "#999", lineHeight: 1.6 }}>
+                    If you can predict the next step in the video, it's a formula, not expertise. Try it: watch any long-form sales video and call out each phase as it happens. Once you see the skeleton, you can never unsee it.
+                  </p>
+                </div>
+                <Ann color="#8b5cf6">💡 Try any of the funnels and compare. The scripts are different but the structure is identical — the subject doesn't matter. The manipulation does.</Ann>
+              </div>
+            )}
+
+            {/* Restart options */}
+            <div style={{ marginTop: 20, display: "flex", gap: 6 }}>
+              <button onClick={() => restart(false)} style={{ flex: 1, padding: 9, background: "transparent", color: "#666", border: "1px solid #2a2a44", borderRadius: 6, fontSize: 10.5, cursor: "pointer", fontFamily: "var(--m)" }}>↩ Retake quiz</button>
+              <button onClick={() => restart(true)} style={{ flex: 1, padding: 9, background: "transparent", color: "#666", border: "1px solid #2a2a44", borderRadius: 6, fontSize: 10.5, cursor: "pointer", fontFamily: "var(--m)" }}>🔀 Try another funnel</button>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+const root = ReactDOM.createRoot(document.getElementById('root'));
+root.render(React.createElement(App));
+</script>
+</body>
+</html>
